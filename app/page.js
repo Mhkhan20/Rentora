@@ -1,19 +1,20 @@
-'use client';
 
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+
+import { Input } from "@/components/ui/input";
 
 export default function Home() {
-  const router = useRouter();
 
-  const handleClick = () => {
-    router.push("/signup");
-  };
+
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-3xl font-semibold mb-4">Welcome to Rentora</h1>
-      <Button onClick={handleClick}>Get Started</Button>
+    <main className="w-full px-6 py-4 flex flex-col justify-center items-center min-h-screen bg-gray-50 text-center">
+      <h1 className="text-4xl font-bold text-black mb-6">Explore Rentals, Anytime, Anywhere.</h1>
+      <div className="max-w-md w-full">
+
+        <Input placeholder="City, Neighborhood, or Postal Code"/>
+      </div>
+
+      <p className="text-gray-600 mt-5">Get started by browsing available listings.</p>
     </main>
   );
 }
