@@ -10,7 +10,7 @@
 - Secure sign-up and sign-in system
 - Role selection during registration: `tenant` or `landlord`
 - Email verification required before access
-- Domain restriction applied for tenant role (e.g. `@unb.ca`)
+- Domain restriction applied for tenant role (`@unb.ca`)
 - Role-aware redirection to separate landing pages after sign-in
 
 ### 🧱 Backend & Database
