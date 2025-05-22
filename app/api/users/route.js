@@ -16,3 +16,28 @@ export async function POST(req) {
         return new Response(JSON.stringify({error: 'Failed to insert user'}), {status: 500});
     }
 }
+
+
+export async function GET(req) { 
+    const {searchParams} = new URL (req.url);
+    const email = searchParams.get('email');
+
+    if (!email) { 
+       return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400 });     
+    }
+
+    try { 
+        const result = await pool.query('SELECT role from users where email = $1', [email]);
+
+        if (result.rows.length === 0) { 
+            return new Response (JSON.stringify({error: 'User not found'}), {status: 400});
+        }
+
+        return new Response (JSON.stringify({role: result.rows[0].role}), {status:200});
+
+
+    } catch(err) { 
+        console.error('DB error: ', err);
+        return new Response ({error: "Failed to fetch user from db"}, {status: 400});
+    }
+}

@@ -13,35 +13,25 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SignupForm() {
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [code, setCode] = useState('');
   const [role, setRole] = useState('');
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false); 
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const router = useRouter();
-
-
+  const { signIn } = useAuth();
 
   const handleSignup = (e) => {
     e.preventDefault();
 
-
-
     const attributes = [
-      new CognitoUserAttribute({
-        Name: 'email',
-        Value: email,
-      }),
-
-      new CognitoUserAttribute({ 
-        Name:'custom:role',
-        Value: role,
-      }),
+      new CognitoUserAttribute({ Name: 'email', Value: email }),
+      new CognitoUserAttribute({ Name: 'custom:role', Value: role }),
     ];
 
     UserPool.signUp(email, password, attributes, null, (err, result) => {
@@ -56,46 +46,36 @@ export default function SignupForm() {
   };
 
   const handleConfirm = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const userData = {
-    Username: email,
-    Pool: UserPool,
-  };
+    const userData = { Username: email, Pool: UserPool };
+    const cognitoUser = new CognitoUser(userData);
 
-  const cognitoUser = new CognitoUser(userData);
-
-  cognitoUser.confirmRegistration(code, true, async (err, result) => {
-    if (err) {
-      toast.error(err.message || "Confirmation failed.");
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          role: role,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save user to DB');
+    cognitoUser.confirmRegistration(code, true, async (err, result) => {
+      if (err) {
+        toast.error(err.message || "Confirmation failed.");
+        return;
       }
 
-      toast.success("Account verified and saved!");
-      router.push(role === 'tenant' ? '/tenantLanding' : '/landlordLanding');
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, role }),
+        });
 
-    } catch (apiErr) {
-      toast.error(apiErr.message || 'API error');
-    }
-  });
-};
+        if (!response.ok) {
+          throw new Error('Failed to save user to DB');
+        }
 
+        await signIn(email, password); // Use context to sign in right after confirmation
+        toast.success("Account verified and signed in!");
+        router.push(role === 'tenant' ? '/tenantLanding' : '/landlordLanding');
+      } catch (apiErr) {
+        toast.error(apiErr.message || 'API or sign-in error');
+      }
+    });
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto mt-10">
@@ -130,7 +110,8 @@ export default function SignupForm() {
                 <SelectItem value="tenant">Tenant (looking to rent)</SelectItem>
                 <SelectItem value="landlord">Landlord (listing a property)</SelectItem>
               </SelectContent>
-          </Select>
+            </Select>
+
             <Button type="submit" className="w-full" disabled={!email || !password || !role}>
               Sign Up
             </Button>
