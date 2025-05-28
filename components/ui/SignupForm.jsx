@@ -14,12 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
 export default function SignupForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [code, setCode] = useState('');
   const [role, setRole] = useState('');
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
@@ -28,6 +32,11 @@ export default function SignupForm() {
 
   const handleSignup = (e) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
 
     const attributes = [
       new CognitoUserAttribute({ Name: 'email', Value: email }),
@@ -68,9 +77,9 @@ export default function SignupForm() {
           throw new Error('Failed to save user to DB');
         }
 
-        await signIn(email, password); // Use context to sign in right after confirmation
+        await signIn(email, password);
         toast.success("Account verified and signed in!");
-        router.push(role === 'tenant' ? '/tenantLanding' : '/landlordLanding');
+        router.push(role === 'tenant' ? '/listings' : '/landlordLanding');
       } catch (apiErr) {
         toast.error(apiErr.message || 'API or sign-in error');
       }
@@ -87,6 +96,7 @@ export default function SignupForm() {
       <CardContent>
         {!awaitingConfirmation ? (
           <form onSubmit={handleSignup} className="space-y-4">
+
             <Input
               type="email"
               placeholder="Email"
@@ -94,13 +104,40 @@ export default function SignupForm() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Input
-              type="password"
-              placeholder="Create a password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2.5 text-gray-500"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-2.5 text-gray-500"
+              >
+                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
             <Select onValueChange={(value) => setRole(value)}>
               <SelectTrigger className="w-2xs">
@@ -112,7 +149,11 @@ export default function SignupForm() {
               </SelectContent>
             </Select>
 
-            <Button type="submit" className="w-full" disabled={!email || !password || !role}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!email || !password || !confirmPassword || !role}
+            >
               Sign Up
             </Button>
           </form>
