@@ -16,9 +16,14 @@ export default function ListingDetailPage() {
         const res = await fetch('/api/listings');
         const data = await res.json();
         const match = data.find((l) => l.id === parseInt(id));
+
         if (!match) {
           router.push('/listings');
         } else {
+          // Attach 3 other listings (excluding current)
+          const others = data.filter((l) => l.id !== parseInt(id));
+          match.otherListings = others.slice(0, 3);
+
           setListing(match);
         }
       } catch (error) {
@@ -55,8 +60,6 @@ export default function ListingDetailPage() {
           alt={`Image ${currentImageIndex + 1}`}
           className="object-cover w-full h-full transition duration-300"
         />
-
-        {/* Left arrow */}
         <button
           onClick={showPrevImage}
           className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full p-2 hover:bg-gray-200 shadow transition"
@@ -64,8 +67,6 @@ export default function ListingDetailPage() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-
-        {/* Right arrow */}
         <button
           onClick={showNextImage}
           className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white text-gray-700 rounded-full p-2 hover:bg-gray-200 shadow transition"
@@ -75,7 +76,7 @@ export default function ListingDetailPage() {
         </button>
       </div>
 
-      {/* Thumbnail indicator */}
+      {/* Thumbnails */}
       <div className="flex gap-2 justify-center mb-6">
         {listing.images.map((img, index) => (
           <button
@@ -94,10 +95,44 @@ export default function ListingDetailPage() {
         ))}
       </div>
 
-      {/* Details */}
+      {/* Listing Details */}
       <p className="text-lg font-semibold mb-2">${listing.price} / month</p>
       <p className="text-gray-700 mb-4">{listing.description}</p>
       <p className="text-sm text-gray-500">Listed by: {listing.landlord_email}</p>
+
+      {/* View More Listings Section */}
+      <div className="mt-12">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-semibold">View More Listings</h2>
+          <button
+            onClick={() => router.push('/listings')}
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Browse All
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {listing.otherListings.map((item) => (
+            <div
+              key={item.id}
+              onClick={() => router.push(`/listings/${item.id}`)}
+              className="cursor-pointer border rounded-lg overflow-hidden hover:shadow transition"
+            >
+              <img
+                src={item.images[0]}
+                alt={item.title}
+                className="w-full h-40 object-cover"
+              />
+              <div className="p-4">
+                <h3 className="text-lg font-bold">{item.title}</h3>
+                <p className="text-sm text-gray-600">{item.location}</p>
+                <p className="text-sm font-semibold text-gray-800">${item.price}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

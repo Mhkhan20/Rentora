@@ -1,15 +1,33 @@
-import pool from '../../../lib/db'; 
-export async function GET() {
+import pool from '../../../lib/db';
+
+export async function GET(req) {
   try {
-    // Step 1: Fetch all listings and landlord email
-    const listingsResult = await pool.query(`
-      SELECT l.*, u.email AS landlord_email
-      FROM listings l
-      JOIN users u ON l.landlord_id = u.id
-    `);
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search')?.trim().toLowerCase();
+
+    let listingsResult;
+
+    if (search) {
+
+      listingsResult = await pool.query(`
+        SELECT l.*, u.email AS landlord_email
+        FROM listings l
+        JOIN users u ON l.landlord_id = u.id
+        WHERE LOWER(l.title) ILIKE $1
+           OR LOWER(l.description) ILIKE $1
+           OR LOWER(l.location) ILIKE $1
+      `, [`%${search}%`]);
+    } else {
+      listingsResult = await pool.query(`
+        SELECT l.*, u.email AS landlord_email
+        FROM listings l
+        JOIN users u ON l.landlord_id = u.id
+      `);
+    }
+
     const listings = listingsResult.rows;
 
-    // Step 2: Fetch related images
+    // Fetch related images
     const listingIds = listings.map((l) => l.id);
     const imagesResult = await pool.query(`
       SELECT listing_id, image_url
@@ -18,7 +36,7 @@ export async function GET() {
     `, [listingIds]);
     const images = imagesResult.rows;
 
-    // Step 3: Group images by listing_id
+    // Group images by listing_id
     const imageMap = {};
     images.forEach((img) => {
       if (!imageMap[img.listing_id]) {
@@ -27,7 +45,7 @@ export async function GET() {
       imageMap[img.listing_id].push(img.image_url);
     });
 
-    // Step 4: Attach images to listings
+    // Attach images
     const enrichedListings = listings.map((listing) => ({
       ...listing,
       images: imageMap[listing.id] || [],
@@ -37,6 +55,7 @@ export async function GET() {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
+
   } catch (err) {
     console.error('Error fetching listings:', err);
     return new Response(JSON.stringify({ error: 'Failed to fetch listings' }), {
