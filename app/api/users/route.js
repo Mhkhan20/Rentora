@@ -18,26 +18,29 @@ export async function POST(req) {
 }
 
 
-export async function GET(req) { 
-    const {searchParams} = new URL (req.url);
-    const email = searchParams.get('email');
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
 
-    if (!email) { 
-       return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400 });     
+  if (!email) {
+    return new Response(JSON.stringify({ error: 'Email is required' }), { status: 400 });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT role FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
     }
 
-    try { 
-        const result = await pool.query('SELECT role from users where email = $1', [email]);
+    console.log('Fetched role for:', email, '→', result.rows[0].role);
 
-        if (result.rows.length === 0) { 
-            return new Response (JSON.stringify({error: 'User not found'}), {status: 400});
-        }
-
-        return new Response (JSON.stringify({role: result.rows[0].role}), {status:200});
-
-
-    } catch(err) { 
-        console.error('DB error: ', err);
-        return new Response ({error: "Failed to fetch user from db"}, {status: 400});
-    }
+    return new Response(JSON.stringify({ role: result.rows[0].role }), { status: 200 });
+  } catch (err) {
+    console.error('DB error: ', err);
+    return new Response(JSON.stringify({ error: "Failed to fetch user from db" }), { status: 500 });
+  }
 }

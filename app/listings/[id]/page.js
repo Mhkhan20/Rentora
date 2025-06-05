@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+
 
 export default function ListingDetailPage() {
   const { id } = useParams();
@@ -46,10 +48,24 @@ export default function ListingDetailPage() {
     );
   };
 
-  if (!listing) return <div className="p-6">Loading...</div>;
+  if (!listing) {
+  return (
+    <div className="flex justify-center items-center h-96">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 border-solid" />
+    </div>
+  );
+}
+
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+            <motion.div
+        className="p-6 max-w-4xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      > 
+
+        <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
       <p className="text-gray-500 mb-4">{listing.location}</p>
 
@@ -134,5 +150,8 @@ export default function ListingDetailPage() {
         </div>
       </div>
     </div>
+
+      </motion.div>
+    
   );
 }
